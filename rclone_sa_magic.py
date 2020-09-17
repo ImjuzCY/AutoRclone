@@ -67,6 +67,12 @@ def handler(signal_received, frame):
 def parse_args():
     parser = argparse.ArgumentParser(description="Copy from source (local/publicly shared drive/Team Drive/) "
                                                  "to destination (publicly shared drive/Team Drive).")
+    parser.add_argument('--copy', action="store_true",
+                        help='rclone copy')
+    parser.add_argument('--move', action="store_true",
+                        help='rclone move')
+    parser.add_argument('--sync', action="store_true",
+                        help='rclone sync')
     parser.add_argument('-s', '--source_id', type=str,
                         help='the id of source. Team Drive id or publicly shared folder id')
     parser.add_argument('-d', '--destination_id', type=str, required=True,
@@ -241,6 +247,7 @@ def main():
     # if rclone is not installed, quit directly
     ret = check_rclone_program()
     print("rclone is detected: {}".format(ret))
+    print("parsing arguments")
     args = parse_args()
 
     id = args.begin_sa_id
@@ -297,7 +304,19 @@ def main():
             check_path(dst_full_path)
 
         # =================cmd to run=================
-        rclone_cmd = "rclone --config {} copy ".format(config_file)
+        rclone_cmd = "rclone --config {} ".format(config_file)
+        if not args.copy and not args.move and not args.sync:
+            sys.exit('copy, move or sync, choose one')
+        if sum([args.copy,args.move,args.sync]) > 1:
+            sys.exit('copy, move or sync, choose at most 1')
+        if args.copy and not args.move and not args.sync:
+            rclone_cmd += "copy "
+        elif args.move and not args.copy and not args.sync:
+            rclone_cmd += "move "
+        elif args.sync and not args.copy and not args.move:
+            rclone_cmd += "sync "
+        else:
+            sys.exit('copy, move or sync, choose at most 1')
         if args.dry_run:
             rclone_cmd += "--dry-run "
         # --fast-list is default adopted in the latest rclone
