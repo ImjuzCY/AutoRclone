@@ -24,6 +24,7 @@ import subprocess
 import sys
 import time
 import distutils.spawn
+import re
 from signal import signal, SIGINT
 
 # =================modify here=================
@@ -116,8 +117,70 @@ def parse_args():
 
     parser.add_argument('--cache', action="store_true",
                         help="for test: cache the remote destination.")
+                        
+    parser.add_argument('--exclude', type=str, action="append",
+                        help='exclude certain files/folders')
 
+    parser.add_argument('--exclude-from', type=str, action="append",
+                        help='exclude certain files/folders from a text file')
+                        
+    parser.add_argument('--include', type=str, action="append",
+                        help='include only certain files/folders')
+
+    parser.add_argument('--include-from', type=str, action="append",
+                        help='include only certain files/folders from a text file')
+
+    parser.add_argument('--filter', type=str, action="append",
+                        help='filtering rule')
+
+    parser.add_argument('--filter-from', type=str, action="append",
+                        help='filtering rule from a file')
+                        
+    parser.add_argument('--ignore-case', action="store_true",
+                        help='ignore case for filters')
+                        
+    parser.add_argument('--files-from', type=str,
+                        help='list of source-file names to include')
+
+    parser.add_argument('--files-from-raw', type=str,
+                        help='list of source-file names to include without processing')
+
+    parser.add_argument('--min-size', type=str,
+                        help='minimum size of file to be transferred')
+
+    parser.add_argument('--max-size', type=str,
+                        help='maximum size of file to be transferred')
+
+    parser.add_argument('--max-age', type=str,
+                        help='maximum age of file to be transferred')
+
+    parser.add_argument('--min-age', type=str,
+                        help='minimum age of file to be transferred')
+
+    parser.add_argument('--delete-excluded', action="store_true",
+                        help='delete files on destination excluded from sync')
+
+    parser.add_argument('--exclude-if-present', type=str,
+                        help='exclude a directory if a file is present inside')
+                        
     args = parser.parse_args()
+    
+    if args.max_age:
+        if re.fullmatch("^\d+(ms|s|m|h|d|w|M|y)$",args.max_age,flags=0) is None:
+            sys.exit("wrong format for --max-age")
+            
+    if args.min_age:
+        if re.fullmatch("^\d+(ms|s|m|h|d|w|M|y)$",args.min_age,flags=0) is None:
+            sys.exit("wrong format for --min-age")
+            
+    if args.max_size:
+        if re.fullmatch("^\d+(\.\d*)(k|M|G)$",args.max_size,flags=0) is None:
+            sys.exit("wrong format for --max-size")
+            
+    if args.min_size:
+        if re.fullmatch("^\d+(\.\d*)(k|M|G)$",args.min_size,flags=0) is None:
+            sys.exit("wrong format for --min_size")
+    
     return args
 
 
@@ -324,7 +387,66 @@ def main():
         rclone_cmd += "--tpslimit {} --transfers {} --drive-chunk-size 32M ".format(TPSLIMIT, TRANSFERS)
         if args.disable_list_r:
             rclone_cmd += "--disable ListR "
-        rclone_cmd += "--drive-acknowledge-abuse --log-file={} \"{}\" \"{}\"".format(logfile, src_full_path,
+            
+        if args.exclude:
+            for i in args.exclude:
+                rclone_cmd += "--exclude \"{}\" ".format(i)
+
+        if args.exclude_from:
+            for i in args.exclude_from:
+                rclone_cmd += "--exclude-from \"{}\" ".format(i)
+                
+        if args.include:
+            for i in args.include:
+                rclone_cmd += "--include \"{}\" ".format(i)
+
+        if args.include_from:
+            for i in args.include_from:
+                rclone_cmd += "--include-from \"{}\" ".format(i)
+                
+        if args.filter:
+            for i in args.filter:
+                rclone_cmd += "--filter \"{}\" ".format(i)
+
+        if args.filter_from:
+            for i in args.filter_from:
+                rclone_cmd += "--include-from \"{}\" ".format(i)
+                
+        if args.exclude or args.exclude_from or args.include or args.include_from or args.filter or args.filter_from:
+            if args.ignore_case:
+                rclone_cmd += "--ignore-case "
+        
+        if args.files_from:
+            rclone_cmd += "--files-from {} ".format(args.files_from)
+            
+        if args.files_from_raw:
+            rclone_cmd += "--files-from-raw {} ".format(args.files_from_raw)
+            
+        if args.max_age:
+            rclone_cmd += "--max-age {} ".format(args.max_age)
+
+        if args.min_age:
+            rclone_cmd += "--min-age {} ".format(args.min_age)
+            
+        if args.max_size:
+            rclone_cmd += "--max-size {} ".format(args.max_size)
+            
+        if args.min_size:
+            rclone_cmd += "--min-size {} ".format(args.min_size)
+            
+        if args.max_age:
+            rclone_cmd += "--max-age {} ".format(args.max_age)
+            
+        if args.max_age:
+            rclone_cmd += "--max-age {} ".format(args.max_age)
+            
+        if args.delete_excluded:
+            rclone_cmd += "--delete-excluded "
+            
+        if args.exclude_if_present:
+            rclone_cmd += "--exclude-if-present {} ".format(args.exclude_if_present)
+
+        rclone_cmd += "--drive-acknowledge-abuse --log-file={} \"{}\" \"{}\" ".format(logfile, src_full_path,
                                                                                      dst_full_path)
 
         if not is_windows():
