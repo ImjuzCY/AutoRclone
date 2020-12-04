@@ -66,6 +66,10 @@ def handler(signal_received, frame):
 
 
 def parse_args():
+    global TPSLIMIT
+    global TRANSFERS
+    global CNT_SA_EXIT
+    
     parser = argparse.ArgumentParser(description="Copy from source (local/publicly shared drive/Team Drive/) "
                                                  "to destination (publicly shared drive/Team Drive).")
     parser.add_argument('--copy', action="store_true",
@@ -163,7 +167,20 @@ def parse_args():
     parser.add_argument('--exclude-if-present', type=str,
                         help='exclude a directory if a file is present inside')
                         
+    parser.add_argument('--tpslimit', type=int, default=3,
+                        help='rclone option --tpslimit')
+                        
+    parser.add_argument('--transfers', type=int, default=3,
+                        help='number of simultaneous transfers')
+                        
+    parser.add_argument('--switch-limit', type=int, default=3,
+                        help='number of continuous switch of accounts before exiting script')
+                        
     args = parser.parse_args()
+    
+    TPSLIMIT = args.tpslimit
+    TRANSFERS = args.transfers
+    CNT_SA_EXIT = args.switch_limit
     
     if args.max_age:
         if re.fullmatch("^\d+(ms|s|m|h|d|w|M|y)$",args.max_age,flags=0) is None:
