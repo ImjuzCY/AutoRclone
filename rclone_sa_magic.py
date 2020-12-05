@@ -179,6 +179,12 @@ def parse_args():
                         
     parser.add_argument('--log-file', type=str, default="log_rclone.txt",
                         help='name of log file')
+                        
+    parser.add_argument('--create-empty-src-dirs', action="store_true",
+                        help='Create empty source dirs on destination after move')
+                        
+    parser.add_argument('--delete-empty-src-dirs', action="store_true",
+                        help='Delete empty source dirs after move')
 
     args = parser.parse_args()
     
@@ -390,6 +396,10 @@ def main():
 
         # =================cmd to run=================
         rclone_cmd = "rclone --config {} ".format(config_file)
+        if not args.move and args.create_empty_src_dirs:
+            sys.exit('--create-empty-src-dirs can only be used with --move')
+        if not args.move and args.delete_empty_src_dirs:
+            sys.exit('--delete-empty-src-dirs can only be used with --move')
         if not args.copy and not args.move and not args.sync:
             sys.exit('copy, move or sync, choose one')
         if sum([args.copy,args.move,args.sync]) > 1:
@@ -402,6 +412,10 @@ def main():
             rclone_cmd += "sync "
         else:
             sys.exit('copy, move or sync, choose at most 1')
+        if args.create_empty_src_dirs:
+            rclone_cmd += "--create-empty-src-dirs "
+        if args.delete_empty_src_dirs:
+            rclone_cmd += "--delete-empty-src-dirs "
         if args.dry_run:
             rclone_cmd += "--dry-run "
         # --fast-list is default adopted in the latest rclone
