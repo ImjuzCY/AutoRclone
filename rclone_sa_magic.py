@@ -69,6 +69,7 @@ def parse_args():
     global TPSLIMIT
     global TRANSFERS
     global CNT_SA_EXIT
+    global logfile
     
     parser = argparse.ArgumentParser(description="Copy from source (local/publicly shared drive/Team Drive/) "
                                                  "to destination (publicly shared drive/Team Drive).")
@@ -176,11 +177,15 @@ def parse_args():
     parser.add_argument('--switch-limit', type=int, default=3,
                         help='number of continuous switch of accounts before exiting script')
                         
+    parser.add_argument('--log-file', type=str, default="log_rclone.txt",
+                        help='name of log file')
+
     args = parser.parse_args()
     
     TPSLIMIT = args.tpslimit
     TRANSFERS = args.transfers
     CNT_SA_EXIT = args.switch_limit
+    logfile = args.log_file
     
     if args.max_age:
         if re.fullmatch("^\d+(ms|s|m|h|d|w|M|y)$",args.max_age,flags=0) is None:
